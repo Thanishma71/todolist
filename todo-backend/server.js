@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,6 +10,7 @@ const Task = require("./models/Task");
 
 const app = express();
 
+/* ===== MIDDLEWARE ===== */
 app.use(cors());
 app.use(express.json());
 
@@ -18,12 +20,17 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
+/* ===== HOME ROUTE ===== */
+app.get("/", (req, res) => {
+  res.send("Todo Backend API Running");
+});
+
 /* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // 🔍 Check existing user
+    // Check if user already exists
     const existingUser = await User.findOne({ username });
 
     if (existingUser) {
@@ -33,10 +40,10 @@ app.post("/register", async (req, res) => {
       });
     }
 
-    // 🔐 HASH PASSWORD
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
+    // Create new user
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -50,6 +57,7 @@ app.post("/register", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+
     res.json({
       success: false,
       message: "Error registering user",
@@ -71,6 +79,7 @@ app.post("/login", async (req, res) => {
       });
     }
 
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -80,7 +89,7 @@ app.post("/login", async (req, res) => {
       });
     }
 
-    // ✅ SEND ONLY REQUIRED DATA
+    // Login success
     res.json({
       success: true,
       _id: user._id,
@@ -88,6 +97,7 @@ app.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+
     res.json({
       success: false,
       message: "Login error",
@@ -99,42 +109,99 @@ app.post("/login", async (req, res) => {
 app.post("/add-task", async (req, res) => {
   const { userId, title, desc, deadline, priority } = req.body;
 
-  if (!title) {
-    return res.json({ message: "Task title required" });
+  try {
+    if (!title) {
+      return res.json({
+        success: false,
+        message: "Task title required",
+      });
+    }
+
+    const newTask = new Task({
+      userId,
+      title,
+      desc,
+      deadline,
+      priority,
+    });
+
+    await newTask.save();
+
+    res.json({
+      success: true,
+      message: "Task added successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.json({
+      success: false,
+      message: "Error adding task",
+    });
   }
-
-  const newTask = new Task({
-    userId,
-    title,
-    desc,
-    deadline,
-    priority,
-  });
-
-  await newTask.save();
-
-  res.json({ message: "Task added successfully" });
 });
 
 /* ===== GET TASKS ===== */
 app.get("/tasks/:userId", async (req, res) => {
-  const tasks = await Task.find({ userId: req.params.userId });
-  res.json(tasks);
+  try {
+    const tasks = await Task.find({
+      userId: req.params.userId,
+    });
+
+    res.json(tasks);
+  } catch (err) {
+    console.error(err);
+
+    res.json({
+      success: false,
+      message: "Error fetching tasks",
+    });
+  }
 });
 
 /* ===== DELETE TASK ===== */
 app.delete("/delete-task/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.json({ message: "Task deleted" });
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: "Task deleted",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.json({
+      success: false,
+      message: "Error deleting task",
+    });
+  }
 });
 
 /* ===== COMPLETE TASK ===== */
 app.put("/complete-task/:id", async (req, res) => {
-  await Task.findByIdAndUpdate(req.params.id, { completed: true });
-  res.json({ message: "Task completed" });
+  try {
+    await Task.findByIdAndUpdate(req.params.id, {
+      completed: true,
+    });
+
+    res.json({
+      success: true,
+      message: "Task completed",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.json({
+      success: false,
+      message: "Error completing task",
+    });
+  }
 });
 
 /* ===== START SERVER ===== */
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
