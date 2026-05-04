@@ -9,25 +9,22 @@ function Register({ goToLogin }) {
       alert("Enter username and password");
       return;
     }
-
     try {
-      const res = await fetch("http://localhost:5000/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
         },
-        body: JSON.stringify({ username, password }),
-      });
-
+      );
       const data = await res.json();
-
-      if (!data.success) {
-        alert(data.message); // already exists
-        return;
+      if (data.success) {
+        alert("Registered successfully! Please login.");
+        goToLogin();
+      } else {
+        alert(data.message);
       }
-
-      alert("Registered successfully! Please login.");
-      goToLogin();
     } catch (err) {
       console.error(err);
       alert("Server error");
@@ -35,75 +32,99 @@ function Register({ goToLogin }) {
   };
 
   return (
-    <div style={container}>
-      <div style={card}>
-        <h2>Register</h2>
+    <>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .reg-card { width: 100%; max-width: 380px; padding: 36px 28px; }
+        @media (max-width: 400px) {
+          .reg-card { padding: 28px 18px; }
+        }
+        .reg-input {
+          width: 100%;
+          padding: 12px 14px;
+          margin-bottom: 14px;
+          border-radius: 8px;
+          border: 1px solid #334155;
+          background: #0f172a;
+          color: white;
+          font-size: 15px;
+          outline: none;
+        }
+        .reg-input:focus { border-color: #3b82f6; }
+        .reg-btn {
+          width: 100%;
+          padding: 12px;
+          background: #22c55e;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 15px;
+          margin-top: 4px;
+        }
+        .reg-btn:active { background: #16a34a; }
+      `}</style>
+      <div style={container}>
+        <div className="reg-card" style={card}>
+          <div style={logo}>📝</div>
+          <h2 style={title}>Create Account</h2>
+          <p style={subtitle}>Join TaskFlow today</p>
 
-        <input
-          style={input}
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+          <input
+            className="reg-input"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+            autoCapitalize="none"
+          />
+          <input
+            className="reg-input"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+          />
 
-        <input
-          style={input}
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <button className="reg-btn" onClick={handleRegister}>
+            Register
+          </button>
 
-        <button style={button} onClick={handleRegister}>
-          Register
-        </button>
-
-        <p style={link} onClick={goToLogin}>
-          Already have account? Login
-        </p>
+          <p style={link} onClick={goToLogin}>
+            Already have an account?{" "}
+            <span style={{ color: "#3b82f6" }}>Login</span>
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default Register;
+
 const container = {
-  height: "100vh",
+  minHeight: "100vh",
   background: "#0f172a",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  padding: "16px",
 };
-
 const card = {
   background: "#1e293b",
-  padding: "40px",
-  borderRadius: "12px",
-  width: "320px",
+  borderRadius: "16px",
   textAlign: "center",
   color: "white",
+  border: "1px solid #334155",
 };
-
-const input = {
-  width: "100%",
-  padding: "10px",
-  marginBottom: "15px",
-  borderRadius: "8px",
-  border: "none",
-};
-
-const button = {
-  width: "100%",
-  padding: "10px",
-  background: "#3b82f6",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
-};
-
+const logo = { fontSize: "40px", marginBottom: "8px" };
+const title = { fontSize: "24px", fontWeight: "bold", marginBottom: "4px" };
+const subtitle = { fontSize: "13px", color: "#94a3b8", marginBottom: "24px" };
 const link = {
-  marginTop: "10px",
+  marginTop: "18px",
   cursor: "pointer",
-  color: "#3b82f6",
+  color: "#94a3b8",
+  fontSize: "14px",
 };
